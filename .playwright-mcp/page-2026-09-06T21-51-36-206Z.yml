@@ -1,0 +1,52 @@
+- generic [ref=e5]:
+  - generic:
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - heading "OmniTrade" [level=2]
+              - button "المزيد" [ref=e41]
+            - button "الرئيسية" [ref=e42]
+            - button "تجار الجملة" [ref=e43]
+            - button "أومني كاش" [ref=e44]
+            - button "طلباتي" [ref=e45]
+            - generic:
+              - group:
+                - generic: أومني كاش ادفع الفواتير واشحن الرصيد من محلك
+                - generic:
+                  - button "اشترِ مجدداً" [ref=e46]
+                  - button "حزم التوفير" [ref=e47]
+                - group "منتجات حصرية متوفرة على OmniTrade فقط":
+                  - button "عرض الكل" [ref=e48]
+                - generic:
+                  - generic:
+                    - group:
+                      - generic:
+                        - 'group "قهوة Omni Select مختصة 500 جم كرتونة (6) • 6 × وحدة 900 ج.م سعر الوحدة: 150 ج.م المخزون: 120 حصري بيع سريع"':
+                          - button "+ أضف" [active] [ref=e49]
+                      - generic:
+                        - 'group "مناديل Omni Select (5 علب) ربطة (5) • 5 × وحدة 250 ج.م 300 ج.م سعر الوحدة: 50 ج.م المخزون: 200 حصري خصم 17%"':
+                          - button "+ أضف" [ref=e50]
+                - group "خدمات الكاش شحن ودفع وتحويل":
+                  - button "عرض الكل" [ref=e51]
+                - generic:
+                  - generic:
+                    - group:
+                      - button "شحن رصيد" [ref=e52]
+                      - button "باقات" [ref=e53]
+                      - button "كهرباء" [ref=e54]
+                      - button "مياه" [ref=e55]
+                      - button "غاز" [ref=e56]
+                      - button "تبرعات" [ref=e57]
+                - group "عروض الجملة الساخنة خصومات عالية من الموردين":
+                  - button "عرض الكل" [ref=e58]
+                - generic:
+                  - generic:
+                    - group:
+                      - generic: "زيت عافية 1.5 لتر كرتونة (6) • 6 × وحدة 1000 ج.م 1080 ج.م سعر الوحدة: 166.67 ج.م المخزون: 497 مباشر بيع سريع خصم 7%"
+                      - generic: "منظف برسيل 2.5 كجم كرتونة (4) • 4 × وحدة 780 ج.م 860 ج.م سعر الوحدة: 195 ج.م المخزون: 30 سوق الجملة عجز — سارع بالطلب خصم 9%"
+                      - generic: "كوكاكولا 2 لتر شرينك (6) • 6 × وحدة 470 ج.م 510 ج.م سعر الوحدة: 78.33 ج.م المخزون: 800 مباشر بيع سريع خصم 8%"
+                      - generic:
+                        - 'group "مناديل Omni Select (5 علب) ربطة (5) • 5 × وحدة 250 ج.م 300 ج.م سعر الوحدة: 50 ج.م المخزون: 200 حصري خصم 17%"':
+                          - button "+ أضف" [ref=e59]

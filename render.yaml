@@ -1,0 +1,16 @@
+# One-click backend hosting on Render.com (free tier)
+# 1) Push E:\Development\marketappabdogomla\backend to a GitHub repo
+# 2) Render Dashboard -> New -> Blueprint -> select repo (uses this file)
+# 3) Done: you get https://babaabdo-backend.onrender.com (+ /admin dashboard)
+services:
+  - type: web
+    name: babaabdo-backend
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node src/index.js
+    healthCheckPath: /health
+    envVars:
+      - key: ADMIN_KEY
+        generateValue: true

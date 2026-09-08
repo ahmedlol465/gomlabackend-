@@ -1,0 +1,15 @@
+- generic [ref=e5]:
+  - generic:
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - heading "OmniTrade — تسجيل الدخول" [level=2]
+            - generic: منصة الجملة والخدمات المالية لتجار التجزئة
+            - generic: توثيق النشاط التجاري (KYC)
+            - textbox "اسم المحل" [ref=e11]
+            - textbox "البطاقة الضريبية / السجل التجاري" [ref=e13]
+            - generic: "الموقع: القاهرة (تحديد تلقائي لربط التوصيل)"
+            - button "ابدأ" [active] [ref=e14]
+            - generic: "تم إرسال الكود (وضع التجربة: 123456)"

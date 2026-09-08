@@ -1,0 +1,13 @@
+- generic [ref=e5] [cursor=pointer]:
+  - generic:
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - heading "OmniTrade — تسجيل الدخول" [level=2]
+            - generic: منصة الجملة والخدمات المالية لتجار التجزئة
+            - generic: ادخل كود التحقق
+            - textbox "OTP" [ref=e9]
+            - button "تأكيد" [active] [ref=e10]
+            - generic: "تم إرسال الكود (وضع التجربة: 123456)"

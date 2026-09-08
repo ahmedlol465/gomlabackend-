@@ -1,0 +1,8 @@
+- generic [ref=e67] [cursor=pointer]:
+  - generic "مربع حوار":
+    - generic: كيف تطلب؟ (3 خطوات)
+    - generic: "الخطوة 2: اجمع السلات"
+    - generic: كل مورد له سلة مستقلة. أكّد كل سلة على حدة حسب الحد الأدنى للطلب.
+    - button "استمع للشرح" [ref=e68]
+    - button "السابق" [ref=e70]
+    - button "التالي" [active] [ref=e69]

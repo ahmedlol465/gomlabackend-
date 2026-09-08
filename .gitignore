@@ -1,0 +1,24 @@
+# Node
+node_modules/
+npm-debug.log
+backend/db.json
+backend/server.log
+backend/out.log
+backend/err.log
+backend/weblog*.txt
+backend/web.log
+
+# Flutter
+.dart_tool/
+.packages
+build/
+*.iml
+.idea/
+.DS_Store
+
+# OS
+Thumbs.db
+Desktop.ini
+
+# Env
+.env

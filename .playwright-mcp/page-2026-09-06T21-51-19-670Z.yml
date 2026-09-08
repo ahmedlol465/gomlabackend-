@@ -1,0 +1,12 @@
+- generic [ref=e35]:
+  - generic "مربع حوار":
+    - generic:
+      - group:
+        - generic: سلات الموردين
+        - generic: كل مورد له سلة وطلب منفصل بحد أدنى خاص به
+        - generic:
+          - group "Omni Select (حصري) 900 ج.م قهوة Omni Select مختصة 500 جم 900 ج.م / كرتونة (6) 1":
+            - button [ref=e36]
+            - button [ref=e37]
+            - button "تأكيد طلب هذا المورد" [ref=e38]
+        - textbox "كوبون (جرّب AHLAN100 أو OMNI5)" [ref=e40]

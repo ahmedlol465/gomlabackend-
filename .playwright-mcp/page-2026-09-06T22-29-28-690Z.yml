@@ -1,0 +1,40 @@
+- generic [ref=f4e1]:
+  - text: .
+  - generic [active] [ref=f4e4]:
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - group:
+                  - button "الرئيسية" [ref=f4e5]
+                  - button "تجار الجملة" [ref=f4e6]
+                  - button "مكسب كاش" [ref=f4e7]
+                  - button "طلبات" [ref=f4e8]
+              - generic:
+                - group:
+                  - group "بتدور على منتج معين؟" [ref=f4e42]:
+                    - button [ref=f4e43]
+                  - generic: مع قسم تجار الجملة ✨ قارن بين الاسعار واطلب المناسب ليك
+                  - button "اعرف أكتر — ازاي تطلب؟" [ref=f4e44]
+                  - button "اقوي عروض من تجار الجملة عرض الكل" [ref=f4e45]
+                  - button "خصومات منتجات التجار العروض متاحة لمدة محدودة %" [ref=f4e46]
+                  - button "تابع طلباتك عرض الكل" [ref=f4e47]
+                  - button "طلباتك" [ref=f4e48]
+                  - button "تصفح الأقسام من التجار عرض الكل" [ref=f4e49]
+                  - generic:
+                    - generic:
+                      - generic:
+                        - button "مشروبات" [ref=f4e50]
+                        - button "مبردات ومجمدات" [ref=f4e51]
+                        - button "بقالة" [ref=f4e52]
+                        - button "منظفات ومطهرات" [ref=f4e53]
+                        - button "صابون" [ref=f4e54]
+                        - button "حلويات وشوكولاتة" [ref=f4e55]
+                        - button "سايب" [ref=f4e56]
+                        - button "مأكولات أساسية" [ref=f4e57]
+              - button "تجار الجملة علامة التبويب 1 من 4" [ref=f4e58]
+              - button "الأقسام علامة التبويب 2 من 4" [ref=f4e24]
+              - button "الموردين علامة التبويب 3 من 4" [ref=f4e59]
+              - button "المزيد علامة التبويب 4 من 4" [ref=f4e26]

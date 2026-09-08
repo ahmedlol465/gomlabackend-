@@ -1,0 +1,29 @@
+- generic [ref=e5] [cursor=pointer]:
+  - generic:
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - heading "OmniTrade" [level=2]
+              - button "المزيد" [ref=e41]
+            - button "الرئيسية" [ref=e42]
+            - button "تجار الجملة" [active] [ref=e43]
+            - button "أومني كاش" [ref=e44]
+            - button "طلباتي" [ref=e45]
+            - generic:
+              - group:
+                - generic:
+                  - group "جديد؟ شاهد كيف تطلب في 3 خطوات دليل صوتي ومكتوب":
+                    - button "ابدأ" [ref=e60]
+                - generic: "تتبع آخر طلب: ac66e0bd — 900 ج.م تأكيد تجهيز شحن توصيل"
+                - generic: تصفح حسب الفئة
+                - generic:
+                  - generic:
+                    - generic:
+                      - button "البقالة" [ref=e61]
+                      - button "المشروبات" [ref=e62]
+                      - button "الألبان" [ref=e63]
+                      - button "السناكس" [ref=e64]
+                      - button "المنظفات" [ref=e65]
+                      - button "العناية الشخصية" [ref=e66]
