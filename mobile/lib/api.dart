@@ -3,8 +3,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Api {
-  // Phone build: PC backend on same Wi-Fi. Change to your PC's IP if it differs (or in-app: المزيد -> الإعدادات).
-  static String base = 'http://192.168.1.15:3100/api/v1';
+  // Production backend on Render. For local testing change to your PC's IP (or in-app: المزيد -> الإعدادات).
+  static String base = 'https://babaabdo-backend.onrender.com/api/v1';
   static String? token;
 
   static Future<void> loadToken() async {
