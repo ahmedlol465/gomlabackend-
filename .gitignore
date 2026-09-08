@@ -22,3 +22,6 @@ Desktop.ini
 
 # Env
 .env
+
+.playwright-mcp/
+dump.txt
