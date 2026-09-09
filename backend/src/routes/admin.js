@@ -13,9 +13,19 @@ function hashPass(pw, salt) {
 }
 
 function initAdmin() {
-  if (!db.admin) db.admin = { username: 'admin', salt: crypto.randomBytes(8).toString('hex'), passwordHash: '' };
+  if (!db.admin) db.admin = { username: 'admin', salt: '', passwordHash: '', defaultPassword: false };
   if (!db.admin.salt) db.admin.salt = crypto.randomBytes(8).toString('hex');
-  if (!db.admin.passwordHash) db.admin.passwordHash = hashPass(ADMIN_PASS_HASH_KEY, db.admin.salt);
+  if (!db.admin.passwordHash) {
+    db.admin.passwordHash = hashPass(ADMIN_PASS_HASH_KEY, db.admin.salt);
+    db.admin.defaultPassword = true;
+  }
+  // Legacy upgrade: older deployments hashed the default password with a
+  // different ADMIN_KEY salt. If the password was never deliberately changed,
+  // re-sync it so admin/admin123 always works.
+  if (db.admin.defaultPassword === undefined && db.admin.passwordHash) {
+    db.admin.passwordHash = hashPass(ADMIN_PASS_HASH_KEY, db.admin.salt);
+    db.admin.defaultPassword = true;
+  }
   save();
 }
 
@@ -51,6 +61,7 @@ router.post('/change-password', adminGuard, (req, res) => {
     return res.status(400).json({ error: 'password_too_short' });
   }
   db.admin.passwordHash = hashPass(newPassword, db.admin.salt);
+  db.admin.defaultPassword = false;
   save();
   const token = jwt.sign({ role: 'admin', username: ADMIN_USER }, JWT_SECRET, { expiresIn: '7d' });
   res.json({ ok: true, token });
