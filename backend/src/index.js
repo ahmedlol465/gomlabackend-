@@ -11,7 +11,7 @@ load();
 // multi-supplier schema (hosting-safe upgrade for existing Render deploys).
 const fs = require('fs');
 const needsReseed = () => {
-  return process.argv.includes('--seed') || !fs.existsSync(path.join(__dirname, '..', 'db.json')) || (db.schemaVersion || 1) < 2;
+  return process.argv.includes('--seed') || !fs.existsSync(path.join(__dirname, '..', 'db.json')) || (db.schemaVersion || 1) < 3;
 };
 if (needsReseed()) seed();
 

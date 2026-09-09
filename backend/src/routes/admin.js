@@ -8,13 +8,14 @@ const JWT_SECRET = process.env.JWT_SECRET || 'maksab-dev-secret';
 const ADMIN_USER = 'admin';
 const ADMIN_PASS_HASH_KEY = process.env.ADMIN_KEY || 'admin123';
 
-function hashPass(pw) {
-  return crypto.createHash('sha256').update(pw + ADMIN_PASS_HASH_KEY).digest('hex');
+function hashPass(pw, salt) {
+  return crypto.createHash('sha256').update(pw + (salt || ADMIN_PASS_HASH_KEY)).digest('hex');
 }
 
 function initAdmin() {
-  if (!db.admin) db.admin = { username: 'admin', passwordHash: hashPass(ADMIN_PASS_HASH_KEY) };
-  if (!db.admin.passwordHash) db.admin.passwordHash = hashPass(ADMIN_PASS_HASH_KEY);
+  if (!db.admin) db.admin = { username: 'admin', salt: crypto.randomBytes(8).toString('hex'), passwordHash: '' };
+  if (!db.admin.salt) db.admin.salt = crypto.randomBytes(8).toString('hex');
+  if (!db.admin.passwordHash) db.admin.passwordHash = hashPass(ADMIN_PASS_HASH_KEY, db.admin.salt);
   save();
 }
 
@@ -33,7 +34,7 @@ function adminGuard(req, res, next) {
 router.post('/login', (req, res) => {
   initAdmin();
   const { username, password } = req.body || {};
-  if (username !== ADMIN_USER || hashPass(password || '') !== db.admin.passwordHash) {
+  if (username !== ADMIN_USER || hashPass(password || '', db.admin.salt) !== db.admin.passwordHash) {
     return res.status(401).json({ error: 'wrong_credentials' });
   }
   const token = jwt.sign({ role: 'admin', username: ADMIN_USER }, JWT_SECRET, { expiresIn: '7d' });
@@ -43,13 +44,13 @@ router.post('/login', (req, res) => {
 router.post('/change-password', adminGuard, (req, res) => {
   initAdmin();
   const { currentPassword, newPassword } = req.body || {};
-  if (hashPass(currentPassword || '') !== db.admin.passwordHash) {
+  if (hashPass(currentPassword || '', db.admin.salt) !== db.admin.passwordHash) {
     return res.status(400).json({ error: 'wrong_current_password' });
   }
   if (!newPassword || newPassword.length < 6) {
     return res.status(400).json({ error: 'password_too_short' });
   }
-  db.admin.passwordHash = hashPass(newPassword);
+  db.admin.passwordHash = hashPass(newPassword, db.admin.salt);
   save();
   const token = jwt.sign({ role: 'admin', username: ADMIN_USER }, JWT_SECRET, { expiresIn: '7d' });
   res.json({ ok: true, token });
