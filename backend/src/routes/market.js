@@ -33,7 +33,9 @@ router.get('/products', (req, res) => {
     const q = norm(search);
     offers = offers.filter((o) => norm(`${o.productName} ${o.category} ${o.brand} ${o.wholesalerName}`).includes(q));
   }
-  res.json({ items: offers, categories: [...new Set(db.products.map((p) => p.category))] });
+  const derived = [...new Set(db.products.map((p) => p.category))];
+  const categories = db.categories.filter((c) => derived.includes(c)).concat(derived.filter((c) => !db.categories.includes(c)));
+  res.json({ items: offers, categories });
 });
 
 // GET /orders/buy-again (auth) — distinct products from past orders for "Buy Again"

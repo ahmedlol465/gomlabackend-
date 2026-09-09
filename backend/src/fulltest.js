@@ -71,10 +71,34 @@ async function req(method, path, body, token, adminToken) {
   r = await req('GET', '/auth/me', null, T);
   check('me-goals', !!r.json.goals && (r.json.points ?? 0) > 0);
 
+  r = await req('GET', '/products');
+  check('categories-ordered', Array.isArray(r.json.categories) && r.json.categories.includes('مشروبات'));
+
   // Admin API: login with default creds
   r = await req('POST', '/admin/login', { username: 'admin', password: process.env.ADMIN_KEY || 'admin123' });
   check('admin-login', r.status === 200 && !!r.json.token, r.text);
   const A = r.json.token;
+  // categories CRUD
+  r = await req('POST', '/admin/categories', { name: 'قسم اختبار' }, null, A);
+  check('category-add', r.json.ok === true);
+  const before = r.json.items.length;
+  r = await req('POST', '/admin/categories', { name: 'قسم اختبار' }, null, A);
+  check('category-dup-blocked', r.status === 400);
+  r = await req('PUT', '/admin/categories/' + encodeURIComponent('قسم اختبار'), { newName: 'قسم محدث' }, null, A);
+  check('category-rename', r.json.ok === true && r.json.items.some(c => c.name === 'قسم محدث'));
+  r = await req('GET', '/products');
+  check('category-absent-search', r.json.categories.length === before - 1, r.json.categories.join(','));
+  r = await req('POST', '/admin/products', { name: 'منتج تحت قسم', category: 'قسم محدث', brand: 'x', unitName: 'قطعة', bulkUnit: 'كرتونة', bulkQty: 10, sellingFast: false }, null, A);
+  const catProdId = r.json.item?.id;
+  check('category-product', !!catProdId);
+  r = await req('DELETE', '/admin/categories/' + encodeURIComponent('قسم محدث'), null, null, A);
+  check('category-in-use-blocked', r.status === 400);
+  r = await req('PUT', '/admin/products/' + catProdId, { category: 'بقالة' }, null, A);
+  check('category-reassign', r.json.ok === true);
+  r = await req('DELETE', '/admin/categories/' + encodeURIComponent('قسم محدث'), null, null, A);
+  check('category-delete', r.json.ok === true);
+  r = await req('DELETE', '/admin/products/' + catProdId, null, null, A);
+  check('category-cleanup-product', r.json.ok === true);
   r = await req('GET', '/admin/overview', null, null, A);
   check('admin-overview', r.json.products >= 100 && r.json.orders >= 3);
   r = await req('GET', '/admin/overview');

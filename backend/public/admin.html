@@ -73,7 +73,7 @@
 const API = location.origin + '/api/v1/admin';
 let TOKEN = localStorage.getItem('maksab-admin-token') || '';
 let TAB = 'overview';
-const TABS = [['overview','نظرة عامة'],['products','المنتجات'],['offers','العروض والأسعار'],['coupons','الكوبونات'],['orders','الطلبات'],['users','العملاء'],['complaints','الشكاوى'],['security','الأمان']];
+const TABS = [['overview','نظرة عامة'],['categories','الأقسام'],['products','المنتجات'],['offers','العروض والأسعار'],['coupons','الكوبونات'],['orders','الطلبات'],['users','العملاء'],['complaints','الشكاوى'],['security','الأمان']];
 let SESSION_CHECKED = false;
 
 function showLogin() {
@@ -152,12 +152,30 @@ async function render() {
         <div class="card ${o.complaints > 0 ? '' : ''}"><b style="${o.complaints > 0 ? 'color:#d32f2f' : ''}">${o.complaints}</b>شكاوى مفتوحة</div></div>
         <p class="muted">نموذج الخصم بالكمية: كل عرض له tiers مثل <code>5:3, 12:7, 24:12</code> أي خصم 3% من 5 قطع، 7% من 12، 12% من 24 — عدّلها من تبويب العروض والأسعار.</p>`;
     }
+    if (TAB === 'categories') {
+      const { items } = await api('GET', '/categories');
+      v.innerHTML = `<div class="row">
+        <input id="f-catname" placeholder="اسم القسم الجديد (مثال: منتجات أطفال)">
+        <button class="btn" onclick="saveCategory()">+ إضافة قسم</button></div>
+      <div class="table-wrap"><table><tr><th>القسم</th><th>عدد المنتجات</th><th>الترتيب</th><th></th></tr>${items.map((c, i) => `<tr>
+        <td>${esc(c.name)}</td><td>${c.count}</td>
+        <td class="actions">
+          <button class="btn ghost" ${i === 0 ? 'disabled' : ''} onclick="moveCategory(${i}, -1)">↑</button>
+          <button class="btn ghost" ${i === items.length - 1 ? 'disabled' : ''} onclick="moveCategory(${i}, 1)">↓</button>
+        </td>
+        <td class="actions">
+          <button class="btn green" onclick="renameCategory('${esc(c.name)}')">تعديل الاسم</button>
+          <button class="btn red" onclick="delCategory('${esc(c.name)}')">حذف</button>
+        </td></tr>`).join('')}</table></div>
+      <p class="muted">الترتيب هنا يتحكم في ترتيب الأقسام داخل التطبيق. لا يمكن حذف قسم به منتجات — انقل منتجاته أولاً أو أعد تسميته.</p>`;
+    }
     if (TAB === 'products') {
-      const { items } = await api('GET', '/products');
+      const [{ items }, { items: cats }] = await Promise.all([api('GET', '/products'), api('GET', '/categories')]);
       PRODS = items;
       v.innerHTML = `<div class="row">
         <input id="f-name" placeholder="اسم المنتج">
-        <input id="f-cat" placeholder="الفئة">
+        <input id="f-cat" list="cat-list" placeholder="الفئة">
+        <datalist id="cat-list">${cats.map((c) => `<option value="${esc(c.name)}">`).join('')}</datalist>
         <input id="f-brand" placeholder="العلامة">
         <input id="f-unit" placeholder="الوحدة (كانز/كيس)">
         <input id="f-bulkunit" placeholder="العبوة (كرتونة 24)">
@@ -272,6 +290,36 @@ function editProduct(id) {
 }
 function cancelEdit() { EDIT_ID = null; render(); }
 async function delProduct(id) { if (confirm('حذف المنتج وعروضه؟')) { await api('DELETE', '/products/' + id); render(); } }
+let CATS = [];
+async function saveCategory() {
+  const name = val('f-catname');
+  if (!name || !name.trim()) { alert('اكتب اسم القسم'); return; }
+  try { await api('POST', '/categories', { name: name.trim() }); render(); }
+  catch (e) { alert('فشل الإضافة: ' + (e.message.includes('exists') ? 'القسم موجود مسبقاً' : e.message)); }
+}
+async function moveCategory(i, dir) {
+  const r = await api('GET', '/categories');
+  const names = r.items.map(c => c.name);
+  const j = i + dir;
+  if (j < 0 || j >= names.length) return;
+  [names[i], names[j]] = [names[j], names[i]];
+  await api('PUT', '/categories/reorder', { names });
+  render();
+}
+async function renameCategory(name) {
+  const newName = prompt('الاسم الجديد للقسم:', name);
+  if (!newName || newName.trim() === name) return;
+  try { await api('PUT', '/categories/' + encodeURIComponent(name), { newName: newName.trim() }); render(); }
+  catch (e) { alert('فشل التعديل: ' + (e.message.includes('exists') ? 'القسم موجود مسبقاً' : e.message)); }
+}
+async function delCategory(name) {
+  if (!confirm('حذف القسم "' + name + '"? (مسموح فقط إذا كان فارغاً)')) return;
+  try { await api('DELETE', '/categories/' + encodeURIComponent(name)); render(); }
+  catch (e) {
+    if (String(e.message).includes('category_in_use')) alert('لا يمكن الحذف — القسم به منتجات. غيّر فئتها أولاً من تبويب المنتجات.');
+    else alert('فشل الحذف: ' + e.message);
+  }
+}
 async function saveOffer() {
   const pid = val('f-prod');
   if (!pid) { alert('اختار المنتج'); return; }

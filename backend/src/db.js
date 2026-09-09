@@ -9,6 +9,7 @@ const DB_FILE = path.join(__dirname, '..', 'db.json');
 const db = {
   schemaVersion: 1,
   admin: null,
+  categories: [],
   users: [],
   wholesalers: [],
   products: [],

@@ -97,6 +97,48 @@ crud('offers', 'offers');
 crud('wholesalers', 'wholesalers');
 crud('coupons', 'coupons');
 
+function categoryList() {
+  const names = db.categories.slice();
+  for (const p of db.products) if (p.category && !names.includes(p.category)) names.push(p.category);
+  return names.map((name) => ({ name, count: db.products.filter((p) => p.category === name).length }));
+}
+
+router.get('/categories', (req, res) => res.json({ items: categoryList() }));
+router.post('/categories', (req, res) => {
+  const name = String((req.body || {}).name || '').trim();
+  if (!name) return res.status(400).json({ error: 'name_required' });
+  if (db.categories.includes(name)) return res.status(400).json({ error: 'exists' });
+  db.categories.push(name);
+  save();
+  res.json({ ok: true, items: categoryList() });
+});
+router.put('/categories/reorder', (req, res) => {
+  const all = categoryList().map((c) => c.name);
+  const names = ((req.body || {}).names || []).filter((n) => all.includes(String(n)));
+  db.categories = names;
+  for (const n of all) if (!db.categories.includes(n)) db.categories.push(n);
+  save();
+  res.json({ ok: true, items: categoryList() });
+});
+router.put('/categories/:name', (req, res) => {
+  const oldName = req.params.name;
+  const newName = String((req.body || {}).newName || '').trim();
+  if (!newName) return res.status(400).json({ error: 'name_required' });
+  if (oldName !== newName && db.categories.includes(newName)) return res.status(400).json({ error: 'exists' });
+  db.categories = db.categories.map((n) => (n === oldName ? newName : n));
+  for (const p of db.products) if (p.category === oldName) p.category = newName;
+  save();
+  res.json({ ok: true, items: categoryList() });
+});
+router.delete('/categories/:name', (req, res) => {
+  const name = req.params.name;
+  const count = db.products.filter((p) => p.category === name).length;
+  if (count > 0) return res.status(400).json({ error: 'category_in_use', count });
+  db.categories = db.categories.filter((n) => n !== name);
+  save();
+  res.json({ ok: true, items: categoryList() });
+});
+
 router.get('/orders', (req, res) => {
   res.json({ items: db.orders.slice().reverse() });
 });
