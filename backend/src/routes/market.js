@@ -159,13 +159,22 @@ router.get('/coupons', (req, res) => res.json({ items: db.coupons.filter((c) => 
 
 router.post('/complaints', auth, (req, res) => {
   const { subject, message } = req.body || {};
-  const c = { id: uuid(), userId: req.user.id, subject, message, status: 'open', createdAt: new Date().toISOString() };
+  const user = db.users.find((u) => u.id === req.user.id) || {};
+  const c = {
+    id: uuid(), userId: req.user.id,
+    userName: user.shopName || user.name || 'تاجر',
+    phone: user.phone || '',
+    subject: subject || 'شكوى', message, status: 'open',
+    adminReply: null, repliedAt: null,
+    createdAt: new Date().toISOString(),
+  };
   db.complaints.push(c); save();
   res.json({ ok: true, complaint: c });
 });
 
 router.get('/complaints', auth, (req, res) => {
-  res.json({ items: db.complaints.filter((c) => c.userId === req.user.id) });
+  const items = db.complaints.filter((c) => c.userId === req.user.id).reverse();
+  res.json({ items });
 });
 
 router.get('/notifications', (req, res) => res.json({ items: db.notifications.slice().reverse().slice(0, 20) }));

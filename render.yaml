@@ -11,6 +11,3 @@ services:
     buildCommand: npm install
     startCommand: node src/index.js
     healthCheckPath: /health
-    envVars:
-      - key: ADMIN_KEY
-        generateValue: true

@@ -1,15 +1,19 @@
 const path = require('path');
 const express = require('express');
-const { load } = require('./db');
+const { db, load } = require('./db');
 const seed = require('./seed');
 const { router: authRoutes } = require('./routes/auth');
 const marketRoutes = require('./routes/market');
 const adminRoutes = require('./routes/admin');
 
 load();
-// Seed demo data on first boot (or with --seed); keeps existing data otherwise (hosting-safe)
+// Seed demo data on first boot (or with --seed); re-seed if DB uses the old
+// multi-supplier schema (hosting-safe upgrade for existing Render deploys).
 const fs = require('fs');
-if (process.argv.includes('--seed') || !fs.existsSync(path.join(__dirname, '..', 'db.json'))) seed();
+const needsReseed = () => {
+  return process.argv.includes('--seed') || !fs.existsSync(path.join(__dirname, '..', 'db.json')) || (db.schemaVersion || 1) < 2;
+};
+if (needsReseed()) seed();
 
 const app = express();
 app.use(express.json());

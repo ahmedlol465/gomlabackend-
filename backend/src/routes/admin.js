@@ -1,14 +1,61 @@
 const express = require('express');
+const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const { db, save, uuid } = require('../db');
 
 const router = express.Router();
-const ADMIN_KEY = process.env.ADMIN_KEY || 'admin123';
+const JWT_SECRET = process.env.JWT_SECRET || 'maksab-dev-secret';
+const ADMIN_USER = 'admin';
+const ADMIN_PASS_HASH_KEY = process.env.ADMIN_KEY || 'admin123';
 
-function guard(req, res, next) {
-  if (req.headers['x-admin-key'] !== ADMIN_KEY) return res.status(403).json({ error: 'forbidden' });
-  next();
+function hashPass(pw) {
+  return crypto.createHash('sha256').update(pw + ADMIN_PASS_HASH_KEY).digest('hex');
 }
-router.use(guard);
+
+function initAdmin() {
+  if (!db.admin) db.admin = { username: 'admin', passwordHash: hashPass(ADMIN_PASS_HASH_KEY) };
+  if (!db.admin.passwordHash) db.admin.passwordHash = hashPass(ADMIN_PASS_HASH_KEY);
+  save();
+}
+
+function adminGuard(req, res, next) {
+  const h = req.headers.authorization || '';
+  const token = h.startsWith('Bearer ') ? h.slice(7) : null;
+  if (!token) return res.status(401).json({ error: 'unauthorized' });
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (decoded.role !== 'admin') return res.status(403).json({ error: 'forbidden' });
+    req.admin = decoded;
+    next();
+  } catch { return res.status(401).json({ error: 'invalid_token' }); }
+}
+
+router.post('/login', (req, res) => {
+  initAdmin();
+  const { username, password } = req.body || {};
+  if (username !== ADMIN_USER || hashPass(password || '') !== db.admin.passwordHash) {
+    return res.status(401).json({ error: 'wrong_credentials' });
+  }
+  const token = jwt.sign({ role: 'admin', username: ADMIN_USER }, JWT_SECRET, { expiresIn: '7d' });
+  res.json({ ok: true, token });
+});
+
+router.post('/change-password', adminGuard, (req, res) => {
+  initAdmin();
+  const { currentPassword, newPassword } = req.body || {};
+  if (hashPass(currentPassword || '') !== db.admin.passwordHash) {
+    return res.status(400).json({ error: 'wrong_current_password' });
+  }
+  if (!newPassword || newPassword.length < 6) {
+    return res.status(400).json({ error: 'password_too_short' });
+  }
+  db.admin.passwordHash = hashPass(newPassword);
+  save();
+  const token = jwt.sign({ role: 'admin', username: ADMIN_USER }, JWT_SECRET, { expiresIn: '7d' });
+  res.json({ ok: true, token });
+});
+
+router.use(adminGuard);
 
 router.get('/overview', (req, res) => {
   const revenue = db.orders.reduce((s, o) => s + (o.total || 0), 0);
@@ -69,12 +116,20 @@ router.patch('/users/:id', (req, res) => {
   save();
   res.json({ ok: true, user: u });
 });
+router.delete('/users/:id', (req, res) => {
+  const i = db.users.findIndex((x) => x.id === req.params.id);
+  if (i < 0) return res.status(404).json({ error: 'not_found' });
+  db.users.splice(i, 1);
+  save();
+  res.json({ ok: true });
+});
 
-router.get('/complaints', (req, res) => res.json({ items: db.complaints }));
+router.get('/complaints', (req, res) => res.json({ items: db.complaints.slice().reverse() }));
 router.patch('/complaints/:id', (req, res) => {
   const c = db.complaints.find((x) => x.id === req.params.id);
   if (!c) return res.status(404).json({ error: 'not_found' });
   if (req.body.status) c.status = req.body.status;
+  if (req.body.adminReply) { c.adminReply = req.body.adminReply; c.repliedAt = new Date().toISOString(); }
   save();
   res.json({ ok: true, complaint: c });
 });

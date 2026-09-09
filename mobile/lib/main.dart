@@ -2,9 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_tts/flutter_tts.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'api.dart';
 
 const mBlue = Color(0xFF0B63E5);
@@ -60,19 +58,6 @@ void toast(BuildContext ctx, String msg) {
   ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(msg), duration: const Duration(milliseconds: 1200)));
 }
 
-String adminUrl() => Api.base.replaceAll('/api/v1', '') + '/admin';
-
-Future<void> openAdmin(BuildContext ctx) async {
-  final url = Uri.parse(adminUrl());
-  try {
-    if (await launchUrl(url, mode: LaunchMode.externalApplication)) return;
-  } catch (_) {}
-  if (ctx.mounted) {
-    showDialog(context: ctx, builder: (_) => Directionality(textDirection: TextDirection.rtl,
-      child: AlertDialog(title: const Text('لوحة التحكم'), content: SelectableText(adminUrl()), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إغلاق'))])));
-  }
-}
-
 const catIcons = {
   'مشروبات': Icons.local_drink, 'مبردات ومجمدات': Icons.ac_unit, 'بقالة': Icons.shopping_basket,
   'منظفات ومطهرات': Icons.cleaning_services, 'صابون': Icons.soap, 'حلويات وشوكولاتة': Icons.cookie,
@@ -83,7 +68,7 @@ const catIcons = {
 };
 
 // ---------- Tiered pricing helpers (mirror server math) ----------
-List tiersOf(Map o) => ((o['tiers'] as List?) ?? []) as List;
+List tiersOf(Map o) => (o['tiers'] as List?) ?? const [];
 
 Map? bestTier(Map o, int qty) {
   Map? best;
@@ -328,14 +313,13 @@ class BottomNav extends StatelessWidget {
     if (seg == 1) {
       items = [{'l': 'قطاعي باب عبده', 'i': Icons.shopping_basket, 'go': 1}, {'l': 'الأقسام', 'i': Icons.grid_view}, {'l': 'طلباتي', 'i': Icons.receipt_long}, {'l': 'المزيد', 'i': Icons.menu}];
     } else if (seg == 2) {
-      items = [{'l': 'جملة', 'i': Icons.store, 'go': 2}, {'l': 'الأقسام', 'i': Icons.grid_view}, {'l': 'الموردين', 'i': Icons.people}, {'l': 'المزيد', 'i': Icons.menu}];
+      items = [{'l': 'جملة', 'i': Icons.store, 'go': 2}, {'l': 'الأقسام', 'i': Icons.grid_view}, {'l': 'طلباتي', 'i': Icons.receipt_long}, {'l': 'المزيد', 'i': Icons.menu}];
     } else {
       items = [{'l': 'عروضي', 'i': Icons.local_offer, 'go': 0}, {'l': 'الأقسام', 'i': Icons.grid_view}, {'l': 'طلباتي', 'i': Icons.receipt_long}, {'l': 'المزيد', 'i': Icons.menu}];
     }
     void open(String l) {
       if (l == 'الأقسام') { Navigator.of(context).push(MaterialPageRoute(builder: (_) => d(const CategoriesPage()))); }
       else if (l == 'طلباتي') { Navigator.of(context).push(MaterialPageRoute(builder: (_) => d(const MyOrdersPage()))); }
-      else if (l == 'الموردين') { Navigator.of(context).push(MaterialPageRoute(builder: (_) => d(const SuppliersPage()))); }
       else if (l == 'المزيد') { Navigator.of(context).push(MaterialPageRoute(builder: (_) => d(const MorePage()))); }
       else {
         final it = items.firstWhere((e) => e['l'] == l);
@@ -436,9 +420,9 @@ class _ProductCardMState extends State<ProductCardM> {
         if (cur != null) Text('خصم كمية ${cur['discountPct']}% مطبق ✓', style: const TextStyle(fontSize: 10.5, color: Colors.green, fontWeight: FontWeight.bold))
         else if (nxt != null) Text('زوّد لـ ${nxt['minQty']} ${mode == 'bulk' ? 'كراتين' : uname} لخصم ${nxt['discountPct']}%', style: TextStyle(fontSize: 10.5, color: Colors.orange.shade800)),
         Text(o['productName'] ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12)),
+        const SizedBox(height: 2),
         if (disc > 0) Text('خصم $disc% لفترة محدودة', style: const TextStyle(fontSize: 10.5, color: Colors.green, fontWeight: FontWeight.bold)),
-        const Spacer(),
-        Row(children: [
+        Expanded(child: Align(alignment: Alignment.bottomCenter, child: Row(children: [
           IconButton(icon: const Icon(Icons.remove_circle_outline, color: mBlue), onPressed: () => setState(() => qty = qty > 1 ? qty - 1 : 1)),
           Text('$qty', style: const TextStyle(fontWeight: FontWeight.bold)),
           IconButton(icon: const Icon(Icons.add_circle_outline, color: mBlue), onPressed: () => setState(() => qty++)),
@@ -446,7 +430,7 @@ class _ProductCardMState extends State<ProductCardM> {
             style: ElevatedButton.styleFrom(padding: EdgeInsets.zero),
             onPressed: () { cart.add(o, mode, qty); toast(context, 'اتضاف $qty ${modeLabel(mode)} — ${egp(total)}'); },
             child: const Text('أضف', style: TextStyle(fontSize: 13)))),
-        ]),
+        ]))),
       ]),
     );
   }
@@ -825,8 +809,8 @@ class _MultiCartSheetState extends State<MultiCartSheet> {
       builder: (_, __) => DraggableScrollableSheet(expand: false, initialChildSize: 0.88, builder: (_, ctrl) => Padding(
         padding: const EdgeInsets.all(16),
         child: ListView(controller: ctrl, children: [
-          const Text('السلات', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-          const Text('كل مورد له سلة وطلب منفصل — اختر جملة أو قطاعي لكل صنف', style: TextStyle(color: Colors.grey, fontSize: 12)), const SizedBox(height: 8),
+          const Text('سلة مشترياتك', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          const Text('اختار جملة أو قطاعي لكل صنف — والخصم بيكبر مع العدد', style: TextStyle(color: Colors.grey, fontSize: 12)), const SizedBox(height: 8),
           ...cart.carts.entries.map((ws) {
             final lines = ws.value['lines'] as Map<String, dynamic>;
             return Card(child: Padding(padding: const EdgeInsets.all(10), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -850,7 +834,7 @@ class _MultiCartSheetState extends State<MultiCartSheet> {
                     IconButton(icon: const Icon(Icons.add, size: 18), onPressed: () => cart.setQty(ws.key, e.key, (e.value['qty'] as int) + 1)),
                   ]));
               }),
-              ElevatedButton(onPressed: () => checkout(ws.key), child: const Text('تأكيد طلب هذا المورد')),
+              ElevatedButton(onPressed: () => checkout(ws.key), child: const Text('تأكيد الطلب')),
             ])));
           }),
           TextField(controller: couponCtrl, decoration: const InputDecoration(labelText: 'كوبون (جرّب AHLAN100)', border: OutlineInputBorder())), Text(msg, style: const TextStyle(color: Colors.red)),
@@ -868,13 +852,11 @@ class WholesaleTab extends StatefulWidget {
   State<WholesaleTab> createState() => _WholesaleTabState();
 }
 class _WholesaleTabState extends State<WholesaleTab> {
-  List items = DemoData.wholesalers;
   Map? lastOrder;
   List bulkOffers = [];
   @override
   void initState() {
     super.initState();
-    Api.get('/wholesalers').then((r) => setState(() => items = r['items'])).catchError((_) {});
     Api.get('/orders').then((r) { final l = (r['items'] as List); if (l.isNotEmpty) setState(() => lastOrder = l.first); }).catchError((_) {});
     Api.get('/products').then((r) {
       final all = (r['items'] as List);
@@ -906,14 +888,14 @@ class _WholesaleTabState extends State<WholesaleTab> {
       Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: const Color(0xFFD6E9FF), borderRadius: BorderRadius.circular(18)),
         child: Row(children: [
           const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('مع قسم تجار الجملة ✨', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: mBlue)),
-            Text('قارن بين الاسعار واطلب المناسب ليك', style: TextStyle(color: Colors.black54, fontSize: 12)),
+            Text('جملة بابا عبدو ✨', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: mBlue)),
+            Text('اشتري بالكرتونة بسعر الجملة — اللي تتاجر بيه', style: TextStyle(color: Colors.black54, fontSize: 12)),
           ])),
           const CircleAvatar(radius: 32, backgroundColor: Colors.white, child: Icon(Icons.store, size: 38, color: Colors.green)),
         ])),
       const SizedBox(height: 6),
       ElevatedButton(onPressed: () => showModalBottomSheet(context: context, isScrollControlled: true, builder: (_) => d(const GuideModal())), child: const Text('اعرف أكتر — ازاي تطلب؟')),
-      sectionHead('اقوي عروض من تجار الجملة', () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => d(const OffersPage())))),
+      sectionHead('اقوي عروض بابا عبدو', () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => d(const OffersPage())))),
       GestureDetector(
         onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => d(const OffersPage()))),
         child: Container(padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: bannerGreenBg, borderRadius: BorderRadius.circular(16)),
@@ -934,7 +916,7 @@ class _WholesaleTabState extends State<WholesaleTab> {
       if (lastOrder != null)
         Card(child: Padding(padding: const EdgeInsets.all(12), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('تتبع آخر طلب: ${lastOrder!['id'].toString().substring(0, 8)}', style: const TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8), const OrderTrackBar(stage: 1),
+          const SizedBox(height: 8), OrderTrackBar(stage: orderStage(lastOrder!['status'] as String?), cancelled: lastOrder!['status'] == 'cancelled'),
         ]))),
       sectionHead('تسوّق بالجملة', () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => d(const SearchPage())))),
       GridView.builder(
@@ -943,25 +925,36 @@ class _WholesaleTabState extends State<WholesaleTab> {
         itemCount: bulkOffers.length,
         itemBuilder: (_, i) => ProductCardM(offer: bulkOffers[i] as Map<String, dynamic>, allOffers: bulkOffers, fixedMode: 'bulk'),
       ),
-      sectionHead('تصفح الأقسام من التجار', () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => d(const CategoriesPage())))),
+      sectionHead('تصفح الأقسام', () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => d(const CategoriesPage())))),
       const CatGridPreview(),
-      sectionHead('الموردين', () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => d(const SuppliersPage())))),
-      ...items.map((w) => Card(child: ListTile(
-        leading: CircleAvatar(backgroundColor: (w['type'] == 'marketplace' ? Colors.orange : mBlue).withOpacity(0.15), child: Icon(Icons.store, color: w['type'] == 'marketplace' ? Colors.orange : mBlue)),
-        title: Text(w['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text('حد أدنى: ${w['minOrderValue']} ج.م — ${w['deliveryEta']} — ★ ${w['rating'] ?? '-'}'),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => d(SupplierProfile(id: w['id'], name: w['name']))))))),
     ]);
+  }
+}
+
+int orderStage(String? s) {
+  switch (s) {
+    case 'confirmed': return 0;
+    case 'preparing': return 1;
+    case 'shipping': return 2;
+    case 'delivered': return 3;
+    default: return 0;
   }
 }
 
 class OrderTrackBar extends StatelessWidget {
   final int stage;
-  const OrderTrackBar({super.key, required this.stage});
+  final bool cancelled;
+  const OrderTrackBar({super.key, required this.stage, this.cancelled = false});
   @override
   Widget build(BuildContext context) {
     const steps = ['تأكيد', 'تجهيز', 'شحن', 'توصيل'];
+    if (cancelled) {
+      return Row(mainAxisAlignment: MainAxisAlignment.center, children: const [
+        Icon(Icons.cancel, color: Colors.red, size: 18),
+        SizedBox(width: 6),
+        Text('تم إلغاء الطلب', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+      ]);
+    }
     return Row(children: List.generate(steps.length * 2 - 1, (i) {
       if (i.isOdd) return Expanded(child: Container(height: 3, color: (i ~/ 2) < stage ? Colors.green : Colors.grey.shade300));
       final idx = i ~/ 2; final done = idx <= stage;
@@ -980,15 +973,15 @@ class GuideModal extends StatefulWidget {
 }
 class _GuideModalState extends State<GuideModal> {
   final steps = [
-    'ابدأ من أقسام تجار الجملة وادخل وقارن بين الاسعار 🔥',
-    'هيتفتح لك قايمة التجار المتاحة لما تدوس على إضافة المنتج 🤩',
-    'شوف سلاتك وخلص طلباتك من التاجر اللي سعره مناسب ليك 🤑',
+    'ابدأ من أقسام بابا عبدو واختار المنتجات اللي بتحتاجها 🔥',
+    'لو عايز تشتري بالجملة اختار وضع جملة، ولو بالقطعة اختار قطاعي 🤩',
+    'شوف سلاتك واكتب اسم المحل وعنوانك وخلص الطلب 🤑',
   ];
   Future<void> speakAll() async {
     try {
       final tts = FlutterTts();
       await tts.setLanguage('ar-EG');
-      await tts.speak('ازاي تطلب من تجار الجملة؟ ${steps.join('. ')}');
+      await tts.speak('ازاي تطلب من بابا عبدو؟ ${steps.join('. ')}');
     } catch (_) { if (mounted) toast(context, 'الصوت غير متاح على هذا الجهاز'); }
   }
   @override
@@ -998,7 +991,7 @@ class _GuideModalState extends State<GuideModal> {
       builder: (_, ctrl) => Padding(
         padding: const EdgeInsets.all(16),
         child: ListView(controller: ctrl, children: [
-          Row(children: [IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)), const Expanded(child: Text('ازاي تطلب من تجار الجملة؟', textAlign: TextAlign.center, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))), const SizedBox(width: 40)]),
+          Row(children: [IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)), const Expanded(child: Text('ازاي تطلب من بابا عبدو؟', textAlign: TextAlign.center, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))), const SizedBox(width: 40)]),
           Center(child: ElevatedButton.icon(icon: const Icon(Icons.volume_up), label: const Text('اسمع الشرح'),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.grey.shade200, foregroundColor: Colors.black87), onPressed: speakAll)),
           const SizedBox(height: 8),
@@ -1019,43 +1012,7 @@ class _GuideModalState extends State<GuideModal> {
   }
 }
 
-class SupplierProfile extends StatefulWidget {
-  final String id; final String name;
-  const SupplierProfile({super.key, required this.id, required this.name});
-  @override
-  State<SupplierProfile> createState() => _SupplierProfileState();
-}
-class _SupplierProfileState extends State<SupplierProfile> {
-  Map? data;
-  @override
-  void initState() {
-    super.initState();
-    Api.get('/wholesalers/${widget.id}').then((r) => setState(() => data = r)).catchError((_) {
-      setState(() => data = {'name': widget.name, 'minOrderValue': 1000, 'deliveryEta': '24-48 ساعة', 'offers': DemoData.offers.where((o) => o['wholesalerId'] == widget.id).toList()});
-    });
-  }
-  @override
-  Widget build(BuildContext context) {
-    final offers = (data?['offers'] as List?) ?? [];
-    return Scaffold(
-      appBar: AppBar(title: Text(widget.name), centerTitle: true),
-      body: ListView(padding: const EdgeInsets.all(12), children: [
-        Card(child: Padding(padding: const EdgeInsets.all(12), child: Text('حد أدنى للطلب: ${data?['minOrderValue'] ?? '-'} ج.م\nالتوصيل المتوقع: ${data?['deliveryEta'] ?? '-'}'))),
-        ...offers.map((o) {
-          final tiers = ((o['tiers'] as List?) ?? []).map((t) => '${t['minQty']}:${t['discountPct']}%').join('، ');
-          return ListTile(
-            title: Text(o['productName'] ?? o['productId']),
-            subtitle: Text('جملة ${egp(o['bulkPrice'])} • قطاعي ${egp(o['piecePrice'])} — مخزون: ${o['stock'] ?? '-'}\nخصومات الكمية: $tiers'),
-            isThreeLine: true,
-            trailing: ElevatedButton(onPressed: () { cart.add(o as Map<String, dynamic>, 'bulk', 1); toast(context, 'اتضافت للسلة'); }, child: const Text('+ جملة')),
-          );
-        }),
-      ]),
-    );
-  }
-}
-
-// ---------- Offers / suppliers / orders ----------
+// ---------- Offers / orders ----------
 class OffersPage extends StatefulWidget {
   const OffersPage({super.key});
   @override
@@ -1171,32 +1128,6 @@ class _OffersGridState extends State<OffersGrid> {
   }
 }
 
-class SuppliersPage extends StatefulWidget {
-  const SuppliersPage({super.key});
-  @override
-  State<SuppliersPage> createState() => _SuppliersPageState();
-}
-class _SuppliersPageState extends State<SuppliersPage> {
-  List items = DemoData.wholesalers;
-  @override
-  void initState() { super.initState(); Api.get('/wholesalers').then((r) => setState(() => items = r['items'])).catchError((_) {}); }
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('الموردين'), centerTitle: true),
-      body: ListView.builder(padding: const EdgeInsets.all(12), itemCount: items.length, itemBuilder: (_, i) {
-        final w = items[i];
-        return Card(child: ListTile(
-          leading: const CircleAvatar(backgroundColor: tileBg, child: Icon(Icons.store, color: mBlue)),
-          title: Text(w['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
-          subtitle: Text('حد أدنى: ${w['minOrderValue']} ج.م — ${w['deliveryEta']} — ★ ${w['rating'] ?? '-'}'),
-          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => Directionality(textDirection: TextDirection.rtl, child: SupplierProfile(id: w['id'], name: w['name']))))));
-      }),
-    );
-  }
-}
-
 class MyOrdersPage extends StatefulWidget {
   const MyOrdersPage({super.key});
   @override
@@ -1221,7 +1152,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
               title: Text('طلب ${o['id'].toString().substring(0, 8)} — ${egp(o['total'])}', style: const TextStyle(fontWeight: FontWeight.bold)),
               subtitle: Text('${o['createdAt'].toString().substring(0, 10)} — ${orderStatusAr(o['status'])}${(o['tierSavings'] ?? 0) > 0 ? ' — وفّرت ${egp(o['tierSavings'])}' : ''}'),
               children: [
-                const Padding(padding: EdgeInsets.all(8), child: OrderTrackBar(stage: 1)),
+                Padding(padding: const EdgeInsets.all(8), child: OrderTrackBar(stage: orderStage(o['status'] as String?), cancelled: o['status'] == 'cancelled')),
                 ...((o['lines'] as List? ?? []).map((l) => ListTile(dense: true,
                   title: Text(l['productId']),
                   subtitle: Text('${modeLabel(l['mode'] ?? 'bulk')} • الكمية: ${l['qty']} × ${egp(l['price'])}${l['tier'] != null ? ' • خصم ${l['tier']['discountPct']}%' : ''}'),
@@ -1241,7 +1172,6 @@ class MorePage extends StatefulWidget {
 class _MorePageState extends State<MorePage> {
   Map? me; List coupons = []; List myOrders = [];
   final complaintCtrl = TextEditingController();
-  String base = Api.base;
   @override
   void initState() {
     super.initState();
@@ -1267,12 +1197,11 @@ class _MorePageState extends State<MorePage> {
           Expanded(child: moreTile(Icons.confirmation_number, 'كوبونات خصم (${coupons.length})')),
         ]),
         const SizedBox(height: 10),
-        menuRow(Icons.dashboard, 'لوحة التحكم (الإدارة)', onTap: () => openAdmin(context)),
         menuRow(Icons.track_changes, 'أهدافك', onTap: () => showDialog(context: context, builder: (_) => d(AlertDialog(title: const Text('أهدافك'),
           content: Text('طلباتك: ${me?['stats']?['orderCount'] ?? 0} — نقاطك: ${me?['points'] ?? 0}\nاطلب 5 مرات أسبوعياً واكسب 100 نقطة'),
           actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('تمام'))])))),
         menuRow(Icons.forum, 'الشكاوي والاقتراحات', onTap: () => showModalBottomSheet(context: context, isScrollControlled: true, builder: (_) => d(ComplaintSheet()))),
-        menuRow(Icons.settings, 'الإعدادات', onTap: () => showModalBottomSheet(context: context, builder: (_) => d(SettingsSheet(base: base, onSave: (v) => setState(() => base = v))))),
+        menuRow(Icons.settings, 'الإعدادات', onTap: () => showModalBottomSheet(context: context, builder: (_) => d(const SettingsSheet()))),
         const SizedBox(height: 8),
         const Text('الكوبونات', style: TextStyle(fontWeight: FontWeight.bold)),
         ...coupons.map((c) => ListTile(dense: true, title: SelectableText(c['code']), subtitle: Text('خصم ${c['discount'] ?? '${c['discountPct']}%'} — حد أدنى ${c['minOrder']}'))),
@@ -1309,42 +1238,71 @@ class ComplaintSheet extends StatefulWidget {
 }
 class _ComplaintSheetState extends State<ComplaintSheet> {
   final ctrl = TextEditingController();
+  List history = [];
+  bool loaded = false;
+  @override
+  void initState() {
+    super.initState();
+    Api.get('/complaints').then((r) {
+      if (mounted) setState(() { history = r['items'] ?? []; loaded = true; });
+    }).catchError((_) { if (mounted) setState(() => loaded = true); });
+  }
+  Future<void> send() async {
+    if (ctrl.text.trim().isEmpty) return;
+    try {
+      await Api.post('/complaints', {'subject': 'شكوى', 'message': ctrl.text});
+      if (!mounted) return;
+      Navigator.pop(context);
+      toast(context, 'تم الإرسال — هنتواصل معاك قريب');
+    } catch (e) { if (mounted) toast(context, 'تعذر الإرسال: $e'); }
+  }
   @override
   Widget build(BuildContext context) {
     return Padding(padding: EdgeInsets.only(left: 16, right: 16, top: 16, bottom: MediaQuery.of(context).viewInsets.bottom + 16),
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         const Text('الشكاوي والاقتراحات', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        if (history.isNotEmpty) ...[
+          const Text('شكاياتك السابقة', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: mBlue)),
+          const SizedBox(height: 4),
+          ConstrainedBox(constraints: const BoxConstraints(maxHeight: 180), child: ListView(
+            shrinkWrap: true,
+            children: history.take(10).map((c) => Card(child: Padding(padding: const EdgeInsets.all(10), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Expanded(child: Text((c['message'] ?? ''), maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13))),
+                Chip(label: Text(c['status'] == 'open' ? 'مفتوحة' : 'تم الرد', style: const TextStyle(fontSize: 10)),
+                  backgroundColor: c['status'] == 'open' ? Colors.orange.shade100 : Colors.green.shade100, padding: EdgeInsets.zero, labelPadding: const EdgeInsets.symmetric(horizontal: 6)),
+              ]),
+              if (c['adminReply'] != null) ...[
+                const SizedBox(height: 4),
+                Container(width: double.infinity, padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: bannerGreenBg, borderRadius: BorderRadius.circular(10)),
+                  child: Text('رد البائع: ${c['adminReply']}', style: const TextStyle(fontSize: 12, color: Colors.black87))),
+              ],
+              Text((c['createdAt'] ?? '').toString().substring(0, 10), style: const TextStyle(color: Colors.grey, fontSize: 10)),
+            ])))).toList(),
+          )),
+          const SizedBox(height: 8),
+        ],
         TextField(controller: ctrl, maxLines: 3, decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'اكتب شكواك أو اقتراحك...')),
         const SizedBox(height: 8),
-        ElevatedButton(child: const Text('إرسال'), onPressed: () async {
-          try { await Api.post('/complaints', {'subject': 'شكوى', 'message': ctrl.text}); if (mounted) { Navigator.pop(context); toast(context, 'تم الإرسال'); } }
-          catch (e) { if (mounted) toast(context, '$e'); }
-        }),
+        ElevatedButton(child: const Text('إرسال'), onPressed: send),
       ]));
   }
 }
 
 class SettingsSheet extends StatefulWidget {
-  final String base; final void Function(String) onSave;
-  const SettingsSheet({super.key, required this.base, required this.onSave});
+  const SettingsSheet({super.key});
   @override
   State<SettingsSheet> createState() => _SettingsSheetState();
 }
 class _SettingsSheetState extends State<SettingsSheet> {
-  late TextEditingController ctrl;
-  @override
-  void initState() { super.initState(); ctrl = TextEditingController(text: widget.base); }
   @override
   Widget build(BuildContext context) {
     return Padding(padding: const EdgeInsets.all(16), child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       const Text('الإعدادات', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
       const ListTile(dense: true, title: Text('الدولة / المنطقة'), subtitle: Text('مصر (EGP ج.م)'), trailing: Text('🇪🇬')),
-      TextField(controller: ctrl, decoration: const InputDecoration(labelText: 'عنوان السيرفر (API base)')),
-      ElevatedButton(child: const Text('حفظ'), onPressed: () async {
-        Api.base = ctrl.text;
-        final p = await SharedPreferences.getInstance();
-        await p.setString('base', ctrl.text);
-        widget.onSave(ctrl.text);
+      const ListTile(dense: true, title: Text('متجر المورد'), subtitle: Text('بابا عبدو — جملة وقطاعي')),
+      ElevatedButton(child: const Text('تم'), onPressed: () {
         if (mounted) Navigator.pop(context);
       }),
     ]));
